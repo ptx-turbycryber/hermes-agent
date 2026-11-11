@@ -107,6 +107,10 @@ class QQAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
     # QQ Bot API does not support editing sent messages.
     SUPPORTS_MESSAGE_EDITING = False
     MAX_MESSAGE_LENGTH = MAX_MESSAGE_LENGTH
+    # 本地补丁：send() 本身按 MAX_MESSAGE_LENGTH 分段，声明这一点让
+    # gateway/delivery.py 把完整内容交过来，而不是先在 4000 字符处截断。
+    # 缺了它，长简报（报纸）只会发到前 4000 字符。
+    splits_long_messages = True
     ALLOW_ALL_ENV_PREFIX = "QQ"
     _TYPING_INPUT_SECONDS = 60  # input_notify duration reported to QQ
     _TYPING_DEBOUNCE_SECONDS = 50  # refresh before it expires
@@ -1422,6 +1426,16 @@ class QQAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
         if reply_to:
             body["msg_id"] = reply_to
         if keyboard is not None:
+            # 本地补丁：QQ 只在 msg_type=2（markdown）的正文里渲染 inline keyboard。
+            # markdown_support 关闭时正文是纯文本（msg_type=0），按钮会被服务端静默
+            # 丢弃（卡片发得出来但点不了）。这里只对带键盘的消息就地换格式，
+            # 普通消息仍是纯文本。msg_seq / msg_id 原样保留。
+            if body.get("msg_type") == MSG_TYPE_TEXT:
+                body["markdown"] = {"content": body.pop("content", content[: self.MAX_MESSAGE_LENGTH])}
+                body["msg_type"] = MSG_TYPE_MARKDOWN
+            # ★ 实测（2026-10-02）：message_reference（引用回复）会让 QQ 丢弃 keyboard。
+            #   带键盘的消息必须去掉它，被动回复靠 msg_id 就够。
+            body.pop("message_reference", None)
             body["keyboard"] = keyboard.to_dict()
         return await self._post_message(self._messages_path(chat_type, target_id), body)
 
@@ -1498,7 +1512,7 @@ class QQAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
         are written to ``~/.hermes/.update_response`` by the interaction callback."""
         del session_key, metadata  # present for contract parity only.
         default_hint = f" (default: {default})" if default else ""
-        content = f"☤ **Update Needs Your Input**\n\n{prompt}{default_hint}"
+        content = f"☤ **更新需要你确认**\n\n{prompt}{default_hint}"
         return await self.send_with_keyboard(
             chat_id, content, build_update_prompt_keyboard(), reply_to=self._last_msg_id.get(chat_id)
         )

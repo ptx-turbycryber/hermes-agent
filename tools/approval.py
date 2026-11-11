@@ -1324,8 +1324,9 @@ def check_all_command_guards(command: str, env_type: str,
 
 
 _EXECUTE_CODE_DESCRIPTION = (
-    "execute_code script execution. The script can spawn subprocesses or "
-    "mutate files without passing through terminal command approval; approval is one-shot for this run."
+    # 本地补丁：汉化
+    "执行 execute_code 脚本。这段脚本能绕开终端命令审批，直接派生进程或改动文件；"
+    "本次授权只对这一次运行有效。"
 )
 
 

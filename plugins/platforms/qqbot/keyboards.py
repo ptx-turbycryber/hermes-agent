@@ -141,6 +141,15 @@ class ApprovalRequest:
 _SEVERITY_ICONS = {"critical": "🔴", "info": "🔵"}
 
 
+def _zh_reason(reason: str) -> str:
+    """本地补丁：把英文风险短语换成中文（未收录原样返回）。"""
+    try:
+        from gateway.platforms.base_exec_approval import translate_reason
+        return translate_reason(reason)
+    except Exception:
+        return reason
+
+
 def build_approval_text(req: ApprovalRequest) -> str:
     """Render an :class:`ApprovalRequest` into the message body (markdown)."""
     if req.command_preview or req.cwd:
@@ -152,11 +161,11 @@ def build_approval_text(req: ApprovalRequest) -> str:
         if req.title and req.title != req.command_preview:
             lines.append(f"📋 {req.title}")
         if req.description:
-            lines.append(f"📝 {req.description}")
+            lines.append(f"📝 {_zh_reason(req.description)}")
     else:
         lines = [f"{_SEVERITY_ICONS.get(req.severity, '🟡')} **审批请求**", "", f"📋 {req.title}"]
         if req.description:
-            lines.append(f"📝 {req.description}")
+            lines.append(f"📝 {_zh_reason(req.description)}")
         if req.tool_name:
             lines.append(f"🔧 工具: {req.tool_name}")
     lines += ["", f"⏱️ 超时: {req.timeout_sec} 秒"]

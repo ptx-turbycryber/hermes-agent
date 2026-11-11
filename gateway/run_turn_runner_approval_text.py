@@ -41,7 +41,8 @@ def _cutting_text_prompt(adapter: Any, chat_id: str, command: str, description: 
     LINE has no ``MAX_MESSAGE_LENGTH``, so its 4096 default is used: conservative, never cut."""
     from gateway.platforms.base import fit_prefix
     from gateway.platforms.base_exec_approval import (
-        approval_timeout_seconds, code_fence, ea_header_text, fit_fenced, ea_reason_label_text, format_approval_deadline_line)
+        approval_timeout_seconds, code_fence, ea_header_text, fit_fenced, ea_reason_label_text, format_approval_deadline_line,
+        translate_reason)
     limit = adapter.max_message_length_for_chat(chat_id)
     measure = adapter.message_len_fn_for_chat(chat_id)
     heading = t("gateway.exec_approval.smart_deny_heading") if smart_denied else f"⚠️ **{ea_header_text()}**"
@@ -50,7 +51,7 @@ def _cutting_text_prompt(adapter: Any, chat_id: str, command: str, description: 
         instructions = (t("gateway.exec_approval.text_choice_joiner").join(choices[:-1])
                         + t("gateway.exec_approval.text_choice_last", choice=choices[-1])) if choices[1:] else f"{choices[0]}.\n"
         return (f"{heading}\n\n{instructions}{notice}{format_approval_deadline_line(approval_timeout_seconds())}"
-                f"\n\n{ea_reason_label_text()}: {description}\n{fence}\n{shown}\n{fence}")
+                f"\n\n{ea_reason_label_text()}: {translate_reason(description)}\n{fence}\n{shown}\n{fence}")
 
     choices = [t("gateway.exec_approval.text_choice_once", prefix=prefix)]
     if not smart_denied and allow_session:

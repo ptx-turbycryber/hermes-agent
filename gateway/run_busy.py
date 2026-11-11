@@ -1574,12 +1574,23 @@ class GatewayBusySessionMixin:
         ``once`` runs it, ``always`` persists the opt-out then runs it, ``cancel`` skips it.
         """
         confirm_required = True
+        exempt: tuple = ()
         try:
             approvals = self._read_user_config().get("approvals")
             if isinstance(approvals, dict):
                 confirm_required = bool(approvals.get("destructive_slash_confirm", True))
+                _exempt_cfg = approvals.get("destructive_slash_confirm_exempt") or ()
+                if isinstance(_exempt_cfg, (list, tuple, set)):
+                    exempt = tuple(_exempt_cfg)
         except Exception:
             pass
+        # 本地补丁：按命令豁免确认。
+        # destructive_slash_confirm 是总开关（管 /clear /new /reset /undo）；
+        # approvals.destructive_slash_confirm_exempt 里列出的命令直接执行，其余仍确认。
+        if exempt:
+            _cmd_key = str(command).lstrip("/").strip().lower()
+            if any(str(_c).lstrip("/").strip().lower() == _cmd_key for _c in exempt):
+                return await execute()
         if not confirm_required:
             return await execute()
 

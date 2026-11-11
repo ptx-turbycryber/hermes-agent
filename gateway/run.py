@@ -589,7 +589,8 @@ def _format_exec_approval_fallback(
     steps a surface without buttons needs. The command is never cut: ``/approve`` must only ever
     answer a command the user could read in full (#62359)."""
     from gateway.platforms.base_exec_approval import (
-        approval_timeout_seconds, ea_header_text, ea_reason_label_text, format_approval_deadline_line)
+        approval_timeout_seconds, ea_header_text, ea_reason_label_text, format_approval_deadline_line,
+        translate_reason)
     heading = (t("gateway.exec_approval.smart_deny_heading") if smart_denied
                else f"⚠️ **{ea_header_text()}**")
 
@@ -601,7 +602,8 @@ def _format_exec_approval_fallback(
     choices.append(t("gateway.exec_approval.text_choice_deny", prefix=command_prefix))
     return (
         t("gateway.exec_approval.text_body", heading=heading, command=command,  # whole: send() splits it
-          reason_label=ea_reason_label_text(), reason=description)
+          # 本地补丁：reason 是英文风险短语，过一遍中文映射表。
+          reason_label=ea_reason_label_text(), reason=translate_reason(description))
         + t("gateway.exec_approval.text_choice_joiner").join(choices[:-1])
         + t("gateway.exec_approval.text_choice_last", choice=choices[-1])
         + format_approval_deadline_line(approval_timeout_seconds()))
