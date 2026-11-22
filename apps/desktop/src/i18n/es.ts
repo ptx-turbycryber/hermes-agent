@@ -3963,6 +3963,8 @@ export const esOverrides = {
     folder: 'Carpeta…',
     images: 'Imágenes…',
     pasteImage: 'Pegar imagen',
+    screenshot: 'Captura de pantalla',
+    screenshotHint: 'Arrastra para seleccionar un área · Esc para cancelar',
     url: 'URL…',
     promptSnippets: 'Fragmentos de prompt…',
     tipPre: 'Consejo: escribe ',

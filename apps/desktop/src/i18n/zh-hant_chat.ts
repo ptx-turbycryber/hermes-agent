@@ -188,6 +188,8 @@ export const zhHantChat = {
     folder: '資料夾…',
     images: '圖片…',
     pasteImage: '貼上圖片',
+    screenshot: '截圖',
+    screenshotHint: '拖曳選擇截圖區域 · Esc 取消',
     url: 'URL…',
     promptSnippets: '提示詞片段…',
     tipPre: '提示：輸入 ',

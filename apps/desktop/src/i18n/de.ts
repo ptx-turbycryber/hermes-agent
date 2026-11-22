@@ -3974,6 +3974,8 @@ export const deOverrides = {
     folder: 'Ordner…',
     images: 'Bilder…',
     pasteImage: 'Bild einfügen',
+    screenshot: 'Bildschirmfoto',
+    screenshotHint: 'Bereich ziehen zum Auswählen · Esc zum Abbrechen',
     url: 'URL…',
     promptSnippets: 'Prompt-Schnipsel…',
     tipPre: 'Tipp: Geben Sie ',

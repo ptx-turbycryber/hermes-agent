@@ -4,6 +4,7 @@ import type { TranslucencyState } from '@hermes/shared/translucency'
 
 import type { ChallengeOutcome } from '../electron/challenge-window'
 import type { ScreenshotApi } from '../electron/command-screenshot-types'
+import type { CaptureRegionApi } from '../electron/screenshot-region-types'
 import type { HudModifierApi } from '../electron/hud-modifier-types'
 import type { MachineProfile } from '../electron/machine-profile'
 import type { HermesNotification } from '../electron/notification-types'
@@ -184,6 +185,8 @@ declare global {
       }
       // macOS native screenshot gesture; absent on other platforms.
       screenshot?: ScreenshotApi
+      // Drag-to-select region capture (composer attach menu), every platform.
+      captureRegion?: CaptureRegionApi['captureRegion']
       hudModifier?: HudModifierApi
       // Quick Entry: a global-hotkey mini composer window. Main owns the OS
       // shortcut registration + the persisted preference (it must restore the

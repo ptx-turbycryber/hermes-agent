@@ -3983,6 +3983,8 @@ export const frOverrides = {
     folder: 'Dossier…',
     images: 'Images…',
     pasteImage: 'Coller une image',
+    screenshot: "Capture d'écran",
+    screenshotHint: 'Faites glisser pour délimiter une zone · Échap pour annuler',
     url: 'URL…',
     promptSnippets: "Extraits d'invite…",
     tipPre: 'Conseil : tapez ',

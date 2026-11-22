@@ -314,6 +314,34 @@ export function ChatBar({
 
   useComposerScreenshot({ sessionKey: activeQueueSessionKey, focusKey, onAttachImageBlob })
 
+  // Attach-menu screenshot: main freezes the cursor's display and returns the
+  // dragged rectangle as a PNG, which rides the same image ingestion as paste.
+  // Undefined (row disabled) when the bridge or the ingest path is missing.
+  const captureScreenshot = useMemo(() => {
+    if (!onAttachImageBlob || typeof window.hermesDesktop?.captureRegion !== 'function') {
+      return undefined
+    }
+
+    const capture = window.hermesDesktop.captureRegion
+
+    return () => {
+      void (async () => {
+        try {
+          const result = await capture({ hint: t.composer.screenshotHint })
+
+          if (!result.ok) {
+            return
+          }
+
+          triggerHaptic('selection')
+          await onAttachImageBlob(new Blob([new Uint8Array(result.png)], { type: 'image/png' }))
+        } catch {
+          // A failed capture is not worth an error toast: the draft is untouched.
+        }
+      })()
+    }
+  }, [onAttachImageBlob, t.composer.screenshotHint])
+
   // Undo/redo. The rich editor bypasses Chromium's editing pipeline for speed,
   // which also bypasses its undo stack — so we own the stack and every edit
   // path below banks its pre-edit state through `recordUndoPoint`.
@@ -1116,6 +1144,7 @@ export function ChatBar({
 
   const contextMenu = (
     <ContextMenu
+      onCaptureScreenshot={captureScreenshot}
       onInsertText={insertText}
       onOpenUrlDialog={openUrlDialog}
       onPasteClipboardImage={onPasteClipboardImage}

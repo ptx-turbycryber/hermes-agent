@@ -3535,6 +3535,8 @@ export const en: Translations = {
     folder: 'Folder…',
     images: 'Images…',
     pasteImage: 'Paste image',
+    screenshot: 'Screenshot',
+    screenshotHint: 'Drag to select an area · Esc to cancel',
     url: 'URL…',
     promptSnippets: 'Prompt snippets…',
     tipPre: 'Tip: type ',

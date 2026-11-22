@@ -237,6 +237,10 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
           }
         }
       : undefined,
+  // Drag-to-select region capture from the composer's attach menu. Unlike the
+  // macOS gesture above this needs no prefix subscription: the user's click on
+  // the menu row is the whole consent, and main freezes the cursor's display.
+  captureRegion: (options?: { hint?: string }) => ipcRenderer.invoke('hermes:screenshot:region', options),
   // Quick Entry: the global-hotkey mini composer window. Main owns the OS
   // shortcut + the persisted preference; the quick window only captures text
   // and hands it back, and the primary renderer submits it through the normal

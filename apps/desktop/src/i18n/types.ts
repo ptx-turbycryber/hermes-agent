@@ -3034,6 +3034,8 @@ export interface Translations extends NoticeTranslations {
     folder: string
     images: string
     pasteImage: string
+    screenshot: string
+    screenshotHint: string
     url: string
     promptSnippets: string
     tipPre: string

@@ -3426,6 +3426,8 @@ export const zhOverrides = {
     folder: '文件夹…',
     images: '图片…',
     pasteImage: '粘贴图片',
+    screenshot: '截图',
+    screenshotHint: '拖动选择截图区域 · Esc 取消',
     url: 'URL…',
     promptSnippets: '提示词片段…',
     tipPre: '提示：输入 ',

@@ -15,7 +15,7 @@ import {
 import { Kbd } from '@/components/ui/kbd'
 import { Tip } from '@/components/ui/tooltip'
 import { useI18n } from '@/i18n'
-import { Clipboard, FileText, FolderOpen, type IconComponent, ImageIcon, Link, MessageSquareText } from '@/lib/icons'
+import { Clipboard, FileText, FolderOpen, type IconComponent, ImageIcon, Link, MessageSquareText, Screenshot } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 import { useComposerAttachmentProviders } from './contrib'
@@ -26,6 +26,7 @@ const SNIPPET_KEYS = ['codeReview', 'implementationPlan', 'explainThis']
 
 export function ContextMenu({
   state,
+  onCaptureScreenshot,
   onInsertText,
   onOpenUrlDialog,
   onPasteClipboardImage,
@@ -83,6 +84,9 @@ export function ContextMenu({
             onSelect={onPasteClipboardImage ? () => void onPasteClipboardImage() : undefined}
           >
             {c.pasteImage}
+          </ContextMenuItem>
+          <ContextMenuItem disabled={!onCaptureScreenshot} icon={Screenshot} onSelect={onCaptureScreenshot}>
+            {c.screenshot}
           </ContextMenuItem>
           <ContextMenuItem icon={Link} onSelect={onOpenUrlDialog}>
             {c.url}
@@ -185,6 +189,7 @@ interface ContextMenuItemProps {
 }
 
 interface ContextMenuProps {
+  onCaptureScreenshot?: () => void
   onInsertText: (text: string) => void
   onOpenUrlDialog: () => void
   onPasteClipboardImage?: (opts?: { silent?: boolean }) => Promise<boolean> | void
