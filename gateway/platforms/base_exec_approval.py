@@ -30,6 +30,141 @@ APPROVAL_TIMED_OUT_NOTICE = (
     "Ask me to try again if you still want it, or raise approvals.timeout in config.yaml.")
 
 
+# ── 本地补丁：危险命令风险短语的中文映射 ─────────────────────────────────
+# ``DANGEROUS_PATTERNS`` 给的是英文短语（如 "recursive delete"），它不经过 i18n，
+# 会原样进审批卡片与纯文本提示。这里补一张查表；未收录的原样返回。
+_REASON_ZH: dict[str, str] = {
+    "PowerShell destructive delete (Remove-Item)": "PowerShell 破坏性删除（Remove-Item）",
+    "PowerShell destructive delete (alias after pipe)": "PowerShell 破坏性删除（管道后面接了别名）",
+    "PowerShell encoded command execution": "PowerShell 执行编码后的命令（疑似混淆）",
+    "SQL DELETE without WHERE": "SQL DELETE 没写 WHERE（会清空整表）",
+    "SQL DROP": "SQL DROP（删表/删库）",
+    "SQL TRUNCATE": "SQL TRUNCATE（清空整表）",
+    "Windows PowerShell destructive delete": "PowerShell 破坏性删除",
+    "Windows PowerShell destructive delete (later in the script)": "PowerShell 破坏性删除（脚本后段再次出现删除动作）",
+    "Windows cmd destructive delete": "Windows cmd 破坏性删除（del/rd）",
+    "Windows destructive delete (recursive/quiet switch)": "Windows 破坏性删除（递归/静默开关）",
+    "access to Hermes secrets (Windows path)": "访问 Hermes 的密钥文件",
+    "access to SSH keys (Windows path)": "访问 SSH 私钥文件",
+    "chmod +x followed by immediate execution": "chmod +x 之后立即执行",
+    "cloud metadata endpoint access (instance credentials)": "访问云元数据端点（可能泄露实例凭据）",
+    "copy/move file into sensitive credential/SSH/shell-rc path": "把文件复制/移动到凭据、SSH、shell 配置路径",
+    "copy/move file into system config path": "把文件复制/移动到系统配置目录",
+    "dd to raw block device": "dd 直写裸设备（会毁掉数据）",
+    "delete backups (wbadmin)": "删除备份（wbadmin）",
+    "delete in root path": "在根目录下删除",
+    "delete volume shadow copies (vssadmin)": "删除卷影副本/系统还原点（vssadmin）",
+    "delete volume shadow copies (wmic)": "删除卷影副本（wmic，会毁掉系统还原点）",
+    "disk copy": "磁盘复制（dd）",
+    "disk partitioning (diskpart)": "磁盘分区操作（diskpart）",
+    "docker compose restart/stop/kill/down (container lifecycle)": "docker compose 重启/停止/销毁容器",
+    "docker context use (switches default daemon for future commands)": "docker context use（改变后续命令的默认守护进程）",
+    "docker restart/stop/kill (container lifecycle)": "docker 重启/停止/结束容器",
+    "docker with daemon redirect (--context: alternate daemon)": "docker 切换守护进程（--context）",
+    "docker with remote daemon redirect (-H/--host)": "docker 指向远程守护进程（-H/--host）",
+    "docker/podman daemon redirect via environment (DOCKER_HOST/CONTAINER_HOST)": "用环境变量改 docker/podman 的守护进程",
+    "dynamic shell word may expand to arbitrary program execution flag": "变量可能展开成任意程序的执行参数",
+    "execute remote content via Invoke-Expression": "用 Invoke-Expression 执行远程内容",
+    "execute remote content via command substitution": "用命令替换执行远程内容",
+    "execute remote script via process substitution": "用进程替换执行远程脚本",
+    "find -delete": "find -delete 批量删除文件",
+    "find -exec/-execdir rm": "find -exec rm 批量删除",
+    "find dynamic shell word may expand to destructive flag": "find 里的变量可能展开成破坏性参数",
+    "force kill processes": "强制结束进程",
+    "force kill processes (Stop-Process -Force)": "强制结束进程（Stop-Process -Force）",
+    "force kill processes (killall -KILL)": "强制结束进程（killall -KILL）",
+    "force kill processes (killall -s KILL)": "强制结束进程（killall -s KILL）",
+    "force kill processes (taskkill /F)": "强制结束进程（taskkill /F）",
+    "force stop service (Stop-Service -Force)": "强制停止服务（Stop-Service -Force）",
+    "fork bomb": "fork 炸弹",
+    "format drive (format.com)": "格式化驱动器（format.com）",
+    "format filesystem": "格式化文件系统",
+    "format filesystem (Format-Volume)": "格式化文件系统（Format-Volume）",
+    "git branch force delete": "git 强制删除分支",
+    "git branch force delete (long flags)": "git 强制删除分支（长参数）",
+    "git branch force delete (long flags, force-first)": "git 强制删除分支（长参数，force 在前）",
+    "git clean with force (deletes untracked files)": "git clean -f（删除未跟踪的文件）",
+    "git force push (rewrites remote history)": "git 强制推送（重写远端历史）",
+    "git force push short flag (rewrites remote history)": "git 强制推送 -f（重写远端历史）",
+    "git reset --hard (destroys uncommitted changes)": "git reset --hard（丢弃未提交的改动）",
+    "grant Everyone access (icacls)": "把访问权限授予 Everyone（icacls）",
+    "hermes update (restarts gateway, kills running agents)": "hermes 升级（会重启网关、杀掉正在运行的 agent）",
+    "in-place edit of Hermes config/env": "原地修改 Hermes 的配置/env",
+    "in-place edit of Hermes config/env (long flag)": "原地修改 Hermes 的配置/env（长参数）",
+    "in-place edit of Hermes config/env (perl/ruby)": "原地修改 Hermes 的配置/env（perl/ruby）",
+    "in-place edit of sensitive credential/SSH/shell-rc path": "原地修改凭据/SSH/shell 配置",
+    "in-place edit of sensitive credential/SSH/shell-rc path (long flag)": "原地修改凭据/SSH/shell 配置（长参数）",
+    "in-place edit of sensitive credential/SSH/shell-rc path (perl/ruby)": "原地修改凭据/SSH/shell 配置（perl/ruby）",
+    "in-place edit of system config": "原地修改系统配置",
+    "in-place edit of system config (long flag)": "原地修改系统配置（长参数）",
+    "init 0/6 (shutdown/reboot)": "init 0/6（关机/重启）",
+    "invisible or bidirectional Unicode control character (possible obfuscation)": "含不可见字符或双向控制符（可能在混淆命令）",
+    "kill all processes": "结束所有进程",
+    "kill hermes/gateway process (self-termination)": "杀掉 Hermes/网关进程（自我终止）",
+    "kill process via backtick pgrep/pidof expansion (self-termination)": "用反引号 pgrep/pidof 杀进程（自我终止）",
+    "kill process via pgrep/pidof expansion (self-termination)": "用 pgrep/pidof 杀进程（自我终止）",
+    "kill processes by regex (killall -r)": "按正则批量结束进程（killall -r）",
+    "modify boot configuration (bcdedit /set)": "修改启动配置（bcdedit /set）",
+    "overwrite project env/config file": "覆盖项目的 env/配置 文件",
+    "overwrite project env/config via redirection": "用重定向覆盖项目的 env/配置",
+    "overwrite project env/config via tee": "用 tee 覆盖项目的 env/配置",
+    "overwrite system config": "覆盖系统配置",
+    "overwrite system file via redirection": "用重定向覆盖系统文件",
+    "overwrite system file via tee": "用 tee 覆盖系统文件",
+    "package manager uninstall": "包管理器卸载",
+    "pipe a credential file into a curl/wget upload (possible exfiltration)": "把凭据文件管道输送给 curl/wget 上传（可能外泄）",
+    "pipe decoded content to shell (possible command obfuscation)": "把解码后的内容管道给 shell（疑似混淆）",
+    "pipe openssl-decoded content to shell (possible command obfuscation)": "把 openssl 解码的内容管道给 shell（疑似混淆）",
+    "pipe remote content to PowerShell (iwr | iex)": "把远程内容管道给 PowerShell 执行（iwr | iex）",
+    "pipe remote content to shell": "把远程内容管道给 shell 执行",
+    "pipe tr-transformed output to shell (possible command obfuscation)": "把 tr 变换后的输出管道给 shell（疑似混淆）",
+    "pipe xxd-decoded content to shell (possible command obfuscation)": "把 xxd 解码的内容管道给 shell（疑似混淆）",
+    "podman remote mode (-r/--remote: remote daemon)": "podman 远程模式（-r/--remote）",
+    "podman with remote daemon redirect (--url/--connection/--identity)": "podman 指向远程守护进程",
+    "recursive chown to root": "递归把属主改成 root",
+    "recursive chown to root (long flag)": "递归把属主改成 root（长参数）",
+    "recursive delete": "递归删除（rm -r）",
+    "recursive delete (flags after operands)": "递归删除（参数写在操作数之后）",
+    "recursive delete (long flag)": "递归删除（--recursive）",
+    "recursive delete of home directory": "递归删除用户主目录",
+    "recursive delete of root filesystem": "递归删除根文件系统",
+    "recursive delete of system directory": "递归删除系统目录",
+    "recursive world/other-writable (long flag)": "递归开放给所有用户（--recursive）",
+    "redirect to raw block device": "重定向到裸设备（会毁掉数据）",
+    "registry delete (reg delete)": "删除注册表项（reg delete）",
+    "registry value delete (Remove-ItemProperty -Force)": "强制删除注册表值",
+    "reset ACLs recursively (icacls /reset)": "递归重置访问控制列表（icacls /reset）",
+    "shell execution via heredoc": "用 heredoc 执行 shell",
+    "start gateway outside systemd (use 'systemctl --user restart hermes-gateway')": "在 systemd 之外启动网关",
+    "stop/delete service (sc)": "停止/删除服务（sc）",
+    "stop/restart hermes gateway (kills running agents)": "停止/重启 Hermes 网关（会杀掉正在运行的 agent）",
+    "stop/restart hermes launchd service (kills running agents)": "停止/重启 Hermes 服务（会杀掉正在运行的 agent）",
+    "stop/restart system service": "停止/重启系统服务",
+    "sudo with combined-flag privilege escalation": "sudo 组合参数提权",
+    "sudo with privilege flag (stdin/askpass/shell/list)": "sudo 提权参数（stdin/askpass/shell/list）",
+    "system shutdown/reboot": "系统关机/重启",
+    "systemctl poweroff/reboot": "systemctl 关机/重启",
+    "telinit 0/6 (shutdown/reboot)": "telinit 0/6（关机/重启）",
+    "upload a secret or credential file via curl/wget (possible exfiltration)": "用 curl/wget 上传密钥或凭据文件（可能外泄）",
+    "wipe disk (Clear-Disk)": "清空磁盘（Clear-Disk）",
+    "wipe free space (cipher /w)": "擦除磁盘空闲空间（cipher /w）",
+    "world/other-writable permissions": "把权限开放给所有用户（o+w）",
+    "write to block device": "直接写入块设备",
+    "xargs with rm": "xargs 配合 rm 批量删除",
+}
+
+def translate_reason(reason: str) -> str:
+    """把 ``detect_dangerous_command`` 给的英文风险短语换成中文；未收录的原样返回。"""
+    if not reason:
+        return reason
+    key = reason.strip()
+    hit = _REASON_ZH.get(key) or _REASON_ZH.get(key.lower())
+    if hit:
+        return hit
+    # 描述可能带括号后缀（如 "... (long flag)"）：去掉括号再试一次
+    return _REASON_ZH.get(key.split(" (")[0], reason)
+
+
 def ea_header_text() -> str:
     """Localized ``EA_HEADER_TEXT``."""
     return t("gateway.exec_approval.header")
@@ -129,6 +264,8 @@ def render_exec_approval(adapter: Any, command: str, description: str, smart_den
     """``(card text, truncated)`` for ``adapter``'s markup. A preview that cannot hold the whole command
     says so in the card: where the full command was sent just before it (``full_command_shown``), or
     that only Deny is offered because it could not be (#62359)."""
+    # 本地补丁：风险短语是英文枚举（"recursive delete"），过一遍中文映射表。
+    description = translate_reason(str(description or ""))
     if adapter._EA_REASON_BUDGET:
         description = adapter._ea_fit(str(description or ""), adapter._EA_REASON_BUDGET)
     key = "truncated_full_above" if full_command_shown else "truncated_deny_only"
