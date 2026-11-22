@@ -3,8 +3,8 @@
 Issue #78050: a bundled ``kind: platform`` plugin is registered as a deferred
 loader so ``hermes chat`` doesn't import ~20 gateway SDKs. The a2a plugin ships
 two independent things behind that one deferral — an inbound adapter (heavy)
-and five outbound client tools (``a2a_call``, ``a2a_discover``, ``a2a_list``,
-``a2a_history``, ``a2a_orchestrate``). Deferring the plugin deferred both, so
+and six outbound client tools (``a2a_call``, ``a2a_discover``, ``a2a_list``,
+``a2a_history``, ``a2a_orchestrate``, ``a2a_task`` for tasks/get). Deferring the plugin deferred both, so
 in a CLI/TUI process the client tools never registered at all:
 ``resolve_toolset("a2a")`` returned ``[]`` and the toolset was absent from the
 ``hermes tools`` checklist. The same tools worked in gateway/web processes only
@@ -27,10 +27,14 @@ import hermes_yaml as yaml
 
 A2A_CLIENT_TOOLS = {
     "a2a_call",
+    "a2a_cancel",
     "a2a_discover",
     "a2a_history",
     "a2a_list",
+    "a2a_list_tasks",
     "a2a_orchestrate",
+    "a2a_reset",
+    "a2a_task",
 }
 
 

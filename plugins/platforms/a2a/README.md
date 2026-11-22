@@ -31,10 +31,26 @@ a2a_agents:
 
 ## Outbound — call other agents
 
-The agent gets five tools:
+The agent gets eight tools:
 
 - `a2a_discover(url)` — what can this agent do?
-- `a2a_call(agent, message, context_id?)` — send it a task, get the reply.
+- `a2a_call(agent, message, context_id?, new_context?, return_immediately?)` —
+  send it a task, get the reply. Without `context_id` it continues the context
+  last used with that peer (`new_context: true` starts a fresh one).
+  `return_immediately: true` asks the peer to accept the task and return a
+  task id at once instead of blocking on the whole turn.
+- `a2a_task(agent, task_id, wait?, interval?)` — read one task over `tasks/get`; `wait`
+  polls until it reaches a terminal state (submitted → working →
+  completed/failed/canceled).
+- `a2a_cancel(agent, task_id)` — cancel a running task over `tasks/cancel`.
+  Best effort: an already-terminal task is reported as such, not as an error.
+- `a2a_reset(agent?)` — forget the remembered conversation so the next bare
+  `a2a_call` starts fresh. Replaces `new_context: true`, which left the old
+  context occupying one of the peer's `maxSessions` slots. Clears the **local**
+  mapping only — the peer frees its own session on its idle timeout.
+- `a2a_list_tasks(agent, context_id?, status?, page_size?, page_token?)` — a peer's
+  tasks over `tasks/list` (A2A v1.0), with filtering and pagination. This is how you
+  recover an async task id you did not note down; `a2a_list` lists peers, not tasks.
 - `a2a_list()` — configured peers, saved conversations, metrics.
 - `a2a_history(context_id)` — recall a saved A2A conversation.
 - `a2a_orchestrate(capability, message, mode?)` — fan-out a task to every

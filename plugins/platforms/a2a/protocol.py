@@ -489,3 +489,113 @@ def load_conversation(context_id: str, limit: int = 50) -> list[dict]:
 def list_conversations() -> list[str]:
     """Context-ids that have persisted conversations."""
     return sorted(p.stem for p in (get_hermes_home() / "a2a_conversations").glob("*.jsonl"))
+
+
+# --------------------------------------------------------------------------
+# Last-context memory: a client-side hint so a bare ``a2a_call`` continues the
+# exchange it had with that peer instead of opening a fresh context each time
+# (which makes a peer forget everything mid-project). File-backed, bounded.
+# --------------------------------------------------------------------------
+
+_LAST_CONTEXT_FILE = "a2a_last_context.json"
+_MAX_TRACKED_PEERS = 64
+_last_context_lock = threading.Lock()
+
+
+def _peer_key(peer: str) -> str:
+    return (peer or "").strip().lower()
+
+
+def _last_context_path() -> Path:
+    return get_hermes_home() / _LAST_CONTEXT_FILE
+
+
+def load_last_context(peer: str) -> str:
+    """Context id most recently used with ``peer`` ('' when none/unreadable)."""
+    key = _peer_key(peer)
+    if not key:
+        return ""
+    with _last_context_lock:
+        try:
+            data = json.loads(_last_context_path().read_text(encoding="utf-8"))
+        except Exception:
+            return ""
+    peers = data.get("peers") if isinstance(data, dict) else None
+    rec = peers.get(key) if isinstance(peers, dict) else None
+    return str(rec.get("context_id") or "") if isinstance(rec, dict) else ""
+
+
+def clear_last_context(peer: str = "") -> list[str]:
+    """Drop the remembered context for ``peer`` (empty = every peer).
+
+    Returns the peer keys that were cleared, so the caller can report what actually changed
+    instead of claiming success unconditionally.
+    """
+    key = _peer_key(peer) if peer else ""
+    with _last_context_lock:
+        path = _last_context_path()
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+        if not isinstance(data, dict):
+            return []
+        peers = data.get("peers")
+        if not isinstance(peers, dict):
+            return []
+        if key:
+            cleared = [key] if key in peers else []
+            peers.pop(key, None)
+        else:
+            cleared = sorted(peers.keys())
+            peers.clear()
+        data["peers"] = peers
+        try:
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            os.replace(tmp, path)
+        except Exception:
+            return []
+    return cleared
+
+
+def save_last_context(peer: str, context_id: str) -> None:
+    """Remember ``context_id`` as the latest exchange with ``peer``. Never raises."""
+    key = _peer_key(peer)
+    if not key or not context_id:
+        return
+    with _last_context_lock:
+        path = _last_context_path()
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        peers = data.get("peers")
+        if not isinstance(peers, dict):
+            peers = {}
+        peers[key] = {"context_id": context_id, "ts": time.time()}
+        # A hand-edited or legacy file can carry odd records: normalise before pruning so a
+        # malformed entry can never raise out of the caller (this runs inside a2a_call).
+        peers = {k: v for k, v in peers.items() if isinstance(v, dict)}
+        if len(peers) > _MAX_TRACKED_PEERS:  # drop the oldest beyond the cap
+            def _ts(rec: dict) -> float:
+                try:
+                    return float(rec.get("ts") or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+            keep = sorted(peers, key=lambda k: _ts(peers[k]))[-_MAX_TRACKED_PEERS:]
+            peers = {k: peers[k] for k in keep}
+        data["peers"] = peers
+        tmp = path.with_name(path.name + f".{os.getpid()}.tmp")
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            os.replace(tmp, path)
+        except Exception:
+            try:
+                tmp.unlink()
+            except Exception:
+                pass
+
